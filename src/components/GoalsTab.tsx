@@ -150,7 +150,7 @@ export default function GoalsTab() {
   const [showLadderVideo, setShowLadderVideo] = useState(false);
 
   const hasIndependent  = selectedGoals.has("independent");
-  const needsLadder     = [...selectedGoals].some(g => TRAINING_GOALS.has(g));
+  const needsLadder     = Array.from(selectedGoals).some(g => TRAINING_GOALS.has(g));
   const filledAnswers   = Object.values(answers).filter(v => v.trim().length > 10).length;
   const canGoToLadder   = filledAnswers >= 2 && (!hasIndependent || selectedPace !== "");
   const activeLadder    = ladder.filter(s => s.active);
