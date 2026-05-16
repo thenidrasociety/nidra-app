@@ -189,7 +189,7 @@ export default function GoalsTab() {
     setView("plan");
     setLoading(true);
     setAiPlan("");
-    const goalLabels = [...selectedGoals].map(id => GOALS.find(g => g.id === id)?.label).filter(Boolean).join(", ");
+    const goalLabels = Array.from(selectedGoals).map(id => GOALS.find(g => g.id === id)?.label).filter(Boolean).join(", ");
     const paceInfo   = PACE_OPTIONS.find(p => p.id === selectedPace);
     const paceText   = paceInfo ? `\nRitmo: ${paceInfo.icon} ${paceInfo.label} — ${paceInfo.time}` : "";
     const ladderText = activeLadder.map(s => s.label);
