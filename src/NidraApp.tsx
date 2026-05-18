@@ -180,10 +180,13 @@ function ChatTab() {
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, system: SYSTEM_PROMPT, messages: updated.map(m => ({ role: m.role, content: m.content })) }),
+        body: JSON.stringify({
+          system: SYSTEM_PROMPT,
+          messages: updated.map(m => ({ role: m.role, content: m.content }))
+        }),
       });
       const data = await res.json();
       setMessages([...updated, { role: "assistant", content: data?.content?.[0]?.text ?? "Lo siento, tuve un problema 🙏" }]);
@@ -283,13 +286,25 @@ export default function NidraApp() {
   // Save log to Supabase
   const addLog = async (newLogs: LogEntry[]) => {
     setLogs(newLogs);
-    if (!user || newLogs.length === 0) return;
-    const newest = newLogs[0];
-    await supabase.from("sleep_logs").insert({
-      user_id: user.id, baby_id: newest.babyId, type: newest.type,
-      start_time: newest.startTime, end_time: newest.endTime || null,
-      notes: newest.notes || null, duration: newest.duration, date: newest.date,
+    if (!user) return;
+    if (!Array.isArray(newLogs) || newLogs.length === 0) return;
+    // The newest log is the one with the highest id
+    let newest: LogEntry | undefined;
+    for (const log of newLogs) {
+      if (!newest || log.id > newest.id) newest = log;
+    }
+    if (!newest || !newest.babyId) return;
+    const { error } = await supabase.from("sleep_logs").insert({
+      user_id: user.id,
+      baby_id: newest.babyId,
+      type: newest.type,
+      start_time: newest.startTime,
+      end_time: newest.endTime || null,
+      notes: newest.notes || null,
+      duration: newest.duration || null,
+      date: newest.date,
     });
+    if (error) console.error("Supabase insert error:", error);
   };
 
   if (authLoading) return (

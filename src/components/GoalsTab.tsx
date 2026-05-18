@@ -197,10 +197,13 @@ export default function GoalsTab() {
     const userMessage = `Objetivos: ${goalLabels}${paceText}\nEscalera: ${ladderText.join(" → ")}\n\nRespuestas:\n${answersText}`;
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1200, system: buildSystemPrompt(selectedPace, ladderText), messages: [{ role: "user", content: userMessage }] }),
+        body: JSON.stringify({
+          system: buildSystemPrompt(selectedPace, ladderText),
+          messages: [{ role: "user", content: userMessage }]
+        }),
       });
       const data = await res.json();
       setAiPlan(data?.content?.[0]?.text ?? "No pude generar el plan. Intenta de nuevo.");
