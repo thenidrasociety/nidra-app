@@ -134,11 +134,6 @@ export default function ScheduleTab({ initialAgeIdx = 4 }: { initialAgeIdx?: num
     }));
   };
 
-  const selectAge = (i: number) => {
-    setEditIdx(null);
-    updateBaby({ selAge: i, rows: buildRows(i) });
-  };
-
   const addExtraNap = () => {
     const napIdxs = rows.reduce((a: number[], r, i) => r.type === "nap" ? [...a, i] : a, []);
     const bedIdx = rows.findIndex(r => r.type === "bed");
