@@ -110,7 +110,14 @@ ${isToddler ? `HERRAMIENTAS TODDLER (el bebé tiene más de 18 meses, SÍ inclui
 - Retorno silencioso para despertares
 - Hablarle claro y con anticipación de qué se espera` : "NO incluir herramientas de toddler — el bebé es menor de 18 meses."}
 
-FORMATO: 1) Valida emocionalmente (2-3 oraciones). 2) Identifica en qué nivel de la pirámide está el bebé. 3) Plan: máx 4-5 pasos numerados, el primero siempre "El próximo paso es...". 4) Explica la rutina nocturna incluyendo la ceremonia de peluches. 5) Frase de aliento. Responde en español, tono cálido.`;
+FORMATO ESTRICTO — MUY IMPORTANTE:
+- NO uses markdown: sin ###, sin **, sin tablas con |, sin listas con guiones
+- Escribe en texto plano con párrafos y números (1. 2. 3.)
+- El primero siempre empieza: "El próximo paso es..."
+- Máximo 5 pasos concretos y accionables
+- Explica la rutina nocturna incluyendo la ceremonia de peluches paso a paso
+- Termina con una frase corta de aliento
+- Responde en español, tono cálido como amiga experta`;
 };
 
 type View = "goals" | "questions" | "ladder" | "plan";
@@ -433,7 +440,47 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
         </div>
       </Card>
 
-      {/* General tips */}
+      {/* Chair method explanation for independent sleep */}
+      {hasIndependent && paceInfo && (
+        <Card>
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 17, color: C.teal, marginBottom: 8 }}>
+            🪑 Cómo funciona el método
+          </div>
+          <div style={{ fontSize: 12, color: "#555", lineHeight: 1.7, marginBottom: 12 }}>
+            Coloca una silla al lado de la cuna de tu bebé. Cada noche reduces un poco el contacto físico — hoy 90%, mañana 85%, pasado 80%... Cada {paceInfo.chairDays} días mueves la silla un poco más lejos hacia la puerta.
+          </div>
+          {/* Chair position diagram */}
+          <svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", borderRadius: 10, background: C.cream }}>
+            {/* Crib */}
+            <rect x="110" y="20" width="80" height="100" rx="6" fill="#fff" stroke={C.teal} strokeWidth="2"/>
+            <text x="150" y="75" textAnchor="middle" fontSize="22">👶</text>
+            <text x="150" y="110" textAnchor="middle" fontSize="9" fill={C.teal}>Cuna</text>
+            {/* Position 1 */}
+            <rect x="60" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.9"/>
+            <text x="75" y="70" textAnchor="middle" fontSize="9" fill="#fff">P1</text>
+            <text x="75" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Al lado</text>
+            {/* Position 2 */}
+            <rect x="18" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.6"/>
+            <text x="33" y="70" textAnchor="middle" fontSize="9" fill="#fff">P2</text>
+            <text x="33" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Cerca</text>
+            {/* Position 3 - door area */}
+            <rect x="210" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.4"/>
+            <text x="225" y="70" textAnchor="middle" fontSize="9" fill="#fff">P3</text>
+            <text x="225" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Lejos</text>
+            {/* Position 4 - door */}
+            <rect x="255" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.2"/>
+            <text x="270" y="70" textAnchor="middle" fontSize="9" fill={C.teal}>P4</text>
+            <text x="270" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Puerta</text>
+            {/* Arrow */}
+            <line x1="55" y1="65" x2="200" y2="65" stroke={C.olive} strokeWidth="1" strokeDasharray="4,3"/>
+            <polygon points="200,60 210,65 200,70" fill={C.olive}/>
+            <text x="130" y="140" textAnchor="middle" fontSize="9" fill={C.olive}>Cada {paceInfo.chairDays} días → un paso más lejos</text>
+          </svg>
+          <div style={{ fontSize: 11, color: "#aaa", marginTop: 8, lineHeight: 1.5 }}>
+            Recuerda: siempre quédate hasta que el bebé esté dormido. No salgas mientras llora.
+          </div>
+        </Card>
+      )}
       <Card style={{ background: C.cream, boxShadow: "none" }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: C.teal, marginBottom: 10 }}>💡 Estrategias que siempre ayudan</div>
         {[

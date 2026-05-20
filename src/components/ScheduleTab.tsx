@@ -192,7 +192,7 @@ export default function ScheduleTab({ initialAgeIdx = 4 }: { initialAgeIdx?: num
           <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 18, color: C.teal }}>Horario sugerido</span>
           <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: C.cream, color: C.teal }}>{age.sub}</span>
         </div>
-        <div style={{ fontSize: 12, color: "#aaa", marginBottom: 4 }}>Selecciona la edad de {activeBaby.name}</div>
+        <div style={{ fontSize: 12, color: "#aaa", marginBottom: 8 }}>Calculado automáticamente por la edad de {activeBaby.name}</div>
         <div style={{ display: "inline-block", background: C.teal, color: "#fff", borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>
           {age.label}
         </div>
