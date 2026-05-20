@@ -449,35 +449,13 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
           <div style={{ fontSize: 12, color: "#555", lineHeight: 1.7, marginBottom: 12 }}>
             Coloca una silla al lado de la cuna de tu bebé. Cada noche reduces un poco el contacto físico — hoy 90%, mañana 85%, pasado 80%... Cada {paceInfo.chairDays} días mueves la silla un poco más lejos hacia la puerta.
           </div>
-          {/* Chair position diagram */}
-          <svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", borderRadius: 10, background: C.cream }}>
-            {/* Crib */}
-            <rect x="110" y="20" width="80" height="100" rx="6" fill="#fff" stroke={C.teal} strokeWidth="2"/>
-            <text x="150" y="75" textAnchor="middle" fontSize="22">👶</text>
-            <text x="150" y="110" textAnchor="middle" fontSize="9" fill={C.teal}>Cuna</text>
-            {/* Position 1 */}
-            <rect x="60" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.9"/>
-            <text x="75" y="70" textAnchor="middle" fontSize="9" fill="#fff">P1</text>
-            <text x="75" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Al lado</text>
-            {/* Position 2 */}
-            <rect x="18" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.6"/>
-            <text x="33" y="70" textAnchor="middle" fontSize="9" fill="#fff">P2</text>
-            <text x="33" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Cerca</text>
-            {/* Position 3 - door area */}
-            <rect x="210" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.4"/>
-            <text x="225" y="70" textAnchor="middle" fontSize="9" fill="#fff">P3</text>
-            <text x="225" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Lejos</text>
-            {/* Position 4 - door */}
-            <rect x="255" y="50" width="30" height="30" rx="4" fill={C.teal} opacity="0.2"/>
-            <text x="270" y="70" textAnchor="middle" fontSize="9" fill={C.teal}>P4</text>
-            <text x="270" y="95" textAnchor="middle" fontSize="8" fill={C.teal}>Puerta</text>
-            {/* Arrow */}
-            <line x1="55" y1="65" x2="200" y2="65" stroke={C.olive} strokeWidth="1" strokeDasharray="4,3"/>
-            <polygon points="200,60 210,65 200,70" fill={C.olive}/>
-            <text x="130" y="140" textAnchor="middle" fontSize="9" fill={C.olive}>Cada {paceInfo.chairDays} días → un paso más lejos</text>
-          </svg>
-          <div style={{ fontSize: 11, color: "#aaa", marginTop: 8, lineHeight: 1.5 }}>
-            Recuerda: siempre quédate hasta que el bebé esté dormido. No salgas mientras llora.
+          <img
+            src="/chair_diagram.png"
+            alt="Diagrama de posiciones de la silla en la habitación del bebé"
+            style={{ width: "100%", borderRadius: 10, marginBottom: 8 }}
+          />
+          <div style={{ fontSize: 11, color: "#aaa", marginTop: 4, lineHeight: 1.5 }}>
+            Quédate siempre hasta que el bebé esté dormido. No salgas mientras llora.
           </div>
         </Card>
       )}

@@ -336,6 +336,8 @@ export default function NidraApp() {
   useEffect(() => {
     if (!user) return;
     const loadProfile = async () => {
+      // Ensure profile exists
+      await supabase.from("profiles").upsert({ id: user.id, email: user.email }, { onConflict: "id", ignoreDuplicates: true });
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (data) {
         const babies: BabyProfile[] = [{ id: "b1", name: data.baby1_name || "Mi bebé", birthdate: data.baby1_birthdate || "" }];
