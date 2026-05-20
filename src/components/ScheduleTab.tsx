@@ -110,17 +110,16 @@ function buildRows(ageIdx: number, wakeOverride?: number): RowData[] {
   return result;
 }
 
-export default function ScheduleTab() {
+export default function ScheduleTab({ initialAgeIdx = 4 }: { initialAgeIdx?: number }) {
   const { config } = useAppConfig();
   const activeBabyId = config.activeBabyId;
   const activeBaby = config.babies.find(b => b.id === activeBabyId) ?? config.babies[0];
 
-  // Per-baby schedule state map
   const [scheduleMap, setScheduleMap] = useState<Record<string, BabyScheduleState>>({});
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
-  // Get or initialize state for active baby
-  const babyState: BabyScheduleState = scheduleMap[activeBabyId] ?? { selAge: 4, rows: buildRows(4) };
+  // Use initialAgeIdx as default for this baby
+  const babyState: BabyScheduleState = scheduleMap[activeBabyId] ?? { selAge: initialAgeIdx, rows: buildRows(initialAgeIdx) };
   const { selAge, rows } = babyState;
   const age = AGES[selAge];
   const napCount = rows.filter(r => r.type === "nap").length;

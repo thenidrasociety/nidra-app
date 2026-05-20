@@ -15,8 +15,52 @@ const C = {
   cream: "#EBE7E0",
 };
 
+// ── Baby age helpers ──────────────────────────────────────────────────────────
+export function getAgeInMonths(birthdate: string): number {
+  if (!birthdate) return 0;
+  const birth = new Date(birthdate);
+  const now = new Date();
+  return (now.getFullYear() - birth.getFullYear()) * 12 +
+    (now.getMonth() - birth.getMonth());
+}
+
+export function getAgeLabel(birthdate: string): string {
+  const months = getAgeInMonths(birthdate);
+  if (months < 1) return "Recién nacido";
+  if (months < 12) return `${months} ${months === 1 ? "mes" : "meses"}`;
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  if (rem === 0) return `${years} ${years === 1 ? "año" : "años"}`;
+  return `${years}a ${rem}m`;
+}
+
+export function getAgeIdxFromMonths(months: number): number {
+  if (months <= 3)  return 0; // 0-3m
+  if (months <= 4)  return 1; // 3-4m
+  if (months <= 6)  return 2; // 5-6m
+  if (months <= 8)  return 3; // 7-8m
+  if (months <= 12) return 4; // 9-12m
+  if (months <= 17) return 5; // 13-17m
+  if (months <= 36) return 6; // 18m-3a
+  if (months <= 48) return 7; // 3-4a
+  return 8;                   // 4-5a
+}
+
+export function getNapTransitionAlert(months: number): string | null {
+  if (months >= 15 && months <= 18) return "Tu bebé se acerca a la transición de 2 a 1 siesta (entre los 15–18 meses). Ve preparándote.";
+  if (months >= 6 && months <= 8)   return "Tu bebé puede estar listo para pasar de 3 a 2 siestas (entre los 7–8 meses).";
+  if (months >= 3 && months <= 5)   return "Entre los 4–6 meses muchos bebés pasan de 4 a 3 siestas. Observa las señales.";
+  if (months >= 36 && months <= 48) return "Entre los 3–4 años algunos bebés abandonan la siesta. Es normal si duerme bien de noche.";
+  return null;
+}
+
 // ── Context ───────────────────────────────────────────────────────────────────
-export interface BabyProfile { id: string; name: string; }
+export interface BabyProfile {
+  id: string;
+  name: string;
+  birthdate: string;
+}
+
 export interface AppConfig {
   babies: BabyProfile[];
   familyMode: boolean;
@@ -28,14 +72,14 @@ export const AppContext = createContext<{
   setConfig: React.Dispatch<React.SetStateAction<AppConfig>>;
   user: User | null;
 }>({
-  config: { babies: [{ id: "b1", name: "Mi bebé" }], familyMode: false, activeBabyId: "b1" },
+  config: { babies: [{ id: "b1", name: "Mi bebé", birthdate: "" }], familyMode: false, activeBabyId: "b1" },
   setConfig: () => {},
   user: null,
 });
 
 export const useAppConfig = () => useContext(AppContext);
 
-// ── Chat ──────────────────────────────────────────────────────────────────────
+// ── Chat system prompt ────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `Eres un asistente de apoyo de The Nidra Society, la marca de Adri, consultora de sueño infantil y coach de crianza consciente certificada internacionalmente.
 Tu nombre es Nidra y respondes en español con calidez, empatía y conocimiento experto.
 Nunca recomiendas métodos que hagan sufrir al bebé o a los padres.
@@ -57,24 +101,26 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 // ── Profile Modal ─────────────────────────────────────────────────────────────
 function ProfileModal({ onClose }: { onClose: () => void }) {
   const { config, setConfig, user } = useAppConfig();
-  const [baby1Name, setBaby1Name] = useState(config.babies[0]?.name ?? "");
-  const [baby2Name, setBaby2Name] = useState(config.babies[1]?.name ?? "");
-  const [familyMode, setFamilyMode] = useState(config.familyMode);
-  const [saving, setSaving] = useState(false);
+  const [baby1Name, setBaby1Name]           = useState(config.babies[0]?.name ?? "");
+  const [baby1Birthdate, setBaby1Birthdate] = useState(config.babies[0]?.birthdate ?? "");
+  const [baby2Name, setBaby2Name]           = useState(config.babies[1]?.name ?? "");
+  const [baby2Birthdate, setBaby2Birthdate] = useState(config.babies[1]?.birthdate ?? "");
+  const [familyMode, setFamilyMode]         = useState(config.familyMode);
+  const [saving, setSaving]                 = useState(false);
 
   const save = async () => {
     setSaving(true);
-    const babies: BabyProfile[] = [{ id: "b1", name: baby1Name || "Mi bebé" }];
-    if (familyMode) babies.push({ id: "b2", name: baby2Name || "Bebé 2" });
+    const babies: BabyProfile[] = [{ id: "b1", name: baby1Name || "Mi bebé", birthdate: baby1Birthdate }];
+    if (familyMode) babies.push({ id: "b2", name: baby2Name || "Bebé 2", birthdate: baby2Birthdate });
     const newConfig = { babies, familyMode, activeBabyId: config.activeBabyId };
     setConfig(newConfig);
-
     if (user) {
       await supabase.from("profiles").upsert({
-        id: user.id,
-        email: user.email,
+        id: user.id, email: user.email,
         baby1_name: baby1Name || "Mi bebé",
+        baby1_birthdate: baby1Birthdate || null,
         baby2_name: familyMode ? (baby2Name || "Bebé 2") : null,
+        baby2_birthdate: familyMode ? (baby2Birthdate || null) : null,
         family_mode: familyMode,
       });
     }
@@ -82,13 +128,21 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = async () => { await supabase.auth.signOut(); };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", border: `1.5px solid ${C.sage}`, borderRadius: 8,
+    padding: "9px 12px", fontFamily: "'Niramit', sans-serif", fontSize: 14,
+    color: "#444", background: C.cream, outline: "none", boxSizing: "border-box",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12, fontWeight: 600, color: C.olive, marginBottom: 6, display: "block",
   };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "flex-end" }}>
-      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: "24px 20px 40px", width: "100%", maxWidth: 430, margin: "0 auto" }}>
+      <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: "24px 20px 40px", width: "100%", maxWidth: 430, margin: "0 auto", maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 20, color: C.teal }}>Perfiles</div>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#aaa" }}>✕</button>
@@ -100,12 +154,22 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: C.olive, marginBottom: 6 }}>Nombre del bebé</div>
-          <input value={baby1Name} onChange={e => setBaby1Name(e.target.value)} placeholder="Ej: Sofía"
-            style={{ width: "100%", border: `1.5px solid ${C.sage}`, borderRadius: 8, padding: "9px 12px", fontFamily: "'Niramit', sans-serif", fontSize: 14, color: "#444", background: C.cream, outline: "none", boxSizing: "border-box" }} />
+        {/* Baby 1 */}
+        <div style={{ marginBottom: 10 }}>
+          <label style={labelStyle}>Nombre del bebé</label>
+          <input value={baby1Name} onChange={e => setBaby1Name(e.target.value)} placeholder="Ej: Sofía" style={inputStyle} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>Fecha de nacimiento</label>
+          <input type="date" value={baby1Birthdate} onChange={e => setBaby1Birthdate(e.target.value)} style={inputStyle} />
+          {baby1Birthdate && (
+            <div style={{ fontSize: 11, color: C.teal, marginTop: 4 }}>
+              Edad: {getAgeLabel(baby1Birthdate)}
+            </div>
+          )}
         </div>
 
+        {/* Family mode */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: C.cream, borderRadius: 12, marginBottom: 14 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.teal }}>Modo familiar 👨‍👩‍👧‍👦</div>
@@ -117,15 +181,24 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {/* Baby 2 */}
         {familyMode && (
           <>
             <div style={{ background: "#fdf8f2", borderRadius: 10, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: "#8a6020", lineHeight: 1.5 }}>
               💛 El modo familiar está disponible para suscriptores del plan Familiar.
             </div>
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: C.olive, marginBottom: 6 }}>Nombre del segundo bebé</div>
-              <input value={baby2Name} onChange={e => setBaby2Name(e.target.value)} placeholder="Ej: Mateo"
-                style={{ width: "100%", border: `1.5px solid ${C.sage}`, borderRadius: 8, padding: "9px 12px", fontFamily: "'Niramit', sans-serif", fontSize: 14, color: "#444", background: C.cream, outline: "none", boxSizing: "border-box" }} />
+            <div style={{ marginBottom: 10 }}>
+              <label style={labelStyle}>Nombre del segundo bebé</label>
+              <input value={baby2Name} onChange={e => setBaby2Name(e.target.value)} placeholder="Ej: Mateo" style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Fecha de nacimiento</label>
+              <input type="date" value={baby2Birthdate} onChange={e => setBaby2Birthdate(e.target.value)} style={inputStyle} />
+              {baby2Birthdate && (
+                <div style={{ fontSize: 11, color: C.teal, marginTop: 4 }}>
+                  Edad: {getAgeLabel(baby2Birthdate)}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -134,7 +207,6 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
           style={{ width: "100%", padding: 13, background: C.teal, color: "#fff", border: "none", borderRadius: 12, fontFamily: "'Niramit', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 12, opacity: saving ? 0.7 : 1 }}>
           {saving ? "Guardando···" : "Guardar"}
         </button>
-
         <button onClick={signOut}
           style={{ width: "100%", padding: 11, background: "transparent", color: "#aaa", border: "0.5px solid #ddd", borderRadius: 12, fontFamily: "'Niramit', sans-serif", fontSize: 13, cursor: "pointer" }}>
           Cerrar sesión
@@ -144,7 +216,7 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── Baby Selector ─────────────────────────────────────────────────────────────
+// ── Baby Selector Bar ─────────────────────────────────────────────────────────
 export function BabySelectorBar() {
   const { config, setConfig } = useAppConfig();
   if (!config.familyMode || config.babies.length < 2) return null;
@@ -160,12 +232,16 @@ export function BabySelectorBar() {
   );
 }
 
-// ── Chat ──────────────────────────────────────────────────────────────────────
+// ── Chat Tab ──────────────────────────────────────────────────────────────────
 function ChatTab() {
+  const { config } = useAppConfig();
+  const activeBaby = config.babies.find(b => b.id === config.activeBabyId) ?? config.babies[0];
+  const ageInfo = activeBaby.birthdate ? ` El bebé se llama ${activeBaby.name} y tiene ${getAgeLabel(activeBaby.birthdate)}.` : "";
+
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Hola, soy Nidra 🌙 Tu asistente de sueño. ¿En qué puedo ayudarte hoy? Cuéntame cómo están las noches." },
   ]);
-  const [input, setInput] = useState("");
+  const [input, setInput]   = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -184,8 +260,8 @@ function ChatTab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: SYSTEM_PROMPT,
-          messages: updated.map(m => ({ role: m.role, content: m.content }))
+          system: SYSTEM_PROMPT + ageInfo,
+          messages: updated.map(m => ({ role: m.role, content: m.content })),
         }),
       });
       const data = await res.json();
@@ -235,18 +311,17 @@ function ChatTab() {
 
 // ── App Shell ─────────────────────────────────────────────────────────────────
 export default function NidraApp() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser]           = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("tracker");
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [tab, setTab]             = useState<Tab>("tracker");
+  const [logs, setLogs]           = useState<LogEntry[]>([]);
   const [showProfile, setShowProfile] = useState(false);
-  const [config, setConfig] = useState<AppConfig>({
-    babies: [{ id: "b1", name: "Mi bebé" }],
+  const [config, setConfig]       = useState<AppConfig>({
+    babies: [{ id: "b1", name: "Mi bebé", birthdate: "" }],
     familyMode: false,
     activeBabyId: "b1",
   });
 
-  // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
@@ -258,14 +333,13 @@ export default function NidraApp() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Load profile from Supabase when user logs in
   useEffect(() => {
     if (!user) return;
     const loadProfile = async () => {
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (data) {
-        const babies: BabyProfile[] = [{ id: "b1", name: data.baby1_name || "Mi bebé" }];
-        if (data.family_mode && data.baby2_name) babies.push({ id: "b2", name: data.baby2_name });
+        const babies: BabyProfile[] = [{ id: "b1", name: data.baby1_name || "Mi bebé", birthdate: data.baby1_birthdate || "" }];
+        if (data.family_mode && data.baby2_name) babies.push({ id: "b2", name: data.baby2_name, birthdate: data.baby2_birthdate || "" });
         setConfig({ babies, familyMode: data.family_mode || false, activeBabyId: "b1" });
       }
     };
@@ -283,26 +357,17 @@ export default function NidraApp() {
     loadLogs();
   }, [user]);
 
-  // Save log to Supabase
   const addLog = async (newLogs: LogEntry[]) => {
     setLogs(newLogs);
     if (!user) return;
     if (!Array.isArray(newLogs) || newLogs.length === 0) return;
-    // The newest log is the one with the highest id
     let newest: LogEntry | undefined;
-    for (const log of newLogs) {
-      if (!newest || log.id > newest.id) newest = log;
-    }
+    for (const log of newLogs) { if (!newest || log.id > newest.id) newest = log; }
     if (!newest || !newest.babyId) return;
     const { error } = await supabase.from("sleep_logs").insert({
-      user_id: user.id,
-      baby_id: newest.babyId,
-      type: newest.type,
-      start_time: newest.startTime,
-      end_time: newest.endTime || null,
-      notes: newest.notes || null,
-      duration: newest.duration || null,
-      date: newest.date,
+      user_id: user.id, baby_id: newest.babyId, type: newest.type,
+      start_time: newest.startTime, end_time: newest.endTime || null,
+      notes: newest.notes || null, duration: newest.duration || null, date: newest.date,
     });
     if (error) console.error("Supabase insert error:", error);
   };
@@ -320,6 +385,9 @@ export default function NidraApp() {
 
   const activeBaby = config.babies.find(b => b.id === config.activeBabyId) ?? config.babies[0];
   const activeLogs = logs.filter(l => l.babyId === config.activeBabyId);
+  const ageMonths  = getAgeInMonths(activeBaby.birthdate);
+  const ageIdx     = getAgeIdxFromMonths(ageMonths);
+  const transitionAlert = activeBaby.birthdate ? getNapTransitionAlert(ageMonths) : null;
 
   return (
     <AppContext.Provider value={{ config, setConfig, user }}>
@@ -345,11 +413,23 @@ export default function NidraApp() {
               <span style={{ fontSize: 18 }}>👤</span>
             </button>
           </div>
-          <div style={{ marginTop: 10, background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 12 }}>🌙</span>
-            <span style={{ fontSize: 12, color: "#fff" }}>{activeBaby.name}</span>
+          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: "5px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 12 }}>🌙</span>
+              <span style={{ fontSize: 12, color: "#fff" }}>{activeBaby.name}</span>
+              {activeBaby.birthdate && (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.75)" }}>· {getAgeLabel(activeBaby.birthdate)}</span>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Transition alert */}
+        {transitionAlert && (
+          <div style={{ background: "#fdf8f2", borderLeft: `3px solid #C4A882`, padding: "10px 16px", fontSize: 12, color: "#8a6020", lineHeight: 1.5 }}>
+            💡 {transitionAlert}
+          </div>
+        )}
 
         <BabySelectorBar />
 
@@ -367,9 +447,9 @@ export default function NidraApp() {
         {/* Content */}
         <div style={{ overflowY: "auto", height: "calc(100vh - 145px)" }}>
           {tab === "tracker"   && <SleepTracker logs={activeLogs} setLogs={addLog} activeBabyId={config.activeBabyId} babyName={activeBaby.name} />}
-          {tab === "schedule"  && <ScheduleTab />}
+          {tab === "schedule"  && <ScheduleTab initialAgeIdx={ageIdx} />}
           {tab === "analytics" && <AnalyticsTab logs={activeLogs} babyName={activeBaby.name} />}
-          {tab === "goals"     && <GoalsTab />}
+          {tab === "goals"     && <GoalsTab babyName={activeBaby.name} babyAgeMonths={ageMonths} babyBirthdate={activeBaby.birthdate} />}
           {tab === "chat"      && <ChatTab />}
         </div>
       </div>
