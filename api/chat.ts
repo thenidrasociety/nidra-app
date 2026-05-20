@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
 
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 1200,
+      max_tokens: 2048,
       system,
       messages,
     });

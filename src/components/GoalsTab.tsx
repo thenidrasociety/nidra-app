@@ -163,7 +163,9 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
   const [answers, setAnswers]             = useState<Record<string, string>>({});
   const [ladder, setLadder]               = useState<LadderStep[]>(DEFAULT_LADDER);
   const [newStep, setNewStep]             = useState("");
-  const [aiPlan, setAiPlan]               = useState<string>("");
+  const [aiPlan, setAiPlan]               = useState<string>(() => {
+    try { return localStorage.getItem("nidra_last_plan") || ""; } catch { return ""; }
+  });
   const [loading, setLoading]             = useState(false);
   const [showLadderVideo, setShowLadderVideo] = useState(false);
 
@@ -219,7 +221,9 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
         }),
       });
       const data = await res.json();
-      setAiPlan(data?.content?.[0]?.text ?? "No pude generar el plan. Intenta de nuevo.");
+      const plan = data?.content?.[0]?.text ?? "No pude generar el plan. Intenta de nuevo.";
+      setAiPlan(plan);
+      try { localStorage.setItem("nidra_last_plan", plan); } catch {}
     } catch {
       setAiPlan("Hubo un error de conexión. Intenta de nuevo o habla con Nidra en el Asistente.");
     }
@@ -412,7 +416,15 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
 
       {/* AI Plan */}
       <Card>
-        <div style={{ fontSize: 11, fontWeight: 600, color: C.olive, letterSpacing: 1, marginBottom: 8 }}>NIDRA ✦ — Tu plan personalizado</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.olive, letterSpacing: 1 }}>NIDRA ✦ — Tu plan personalizado</div>
+          {aiPlan && !loading && (
+            <button onClick={() => { setView("goals"); setAiPlan(""); try { localStorage.removeItem("nidra_last_plan"); } catch {} }}
+              style={{ fontSize: 11, color: "#aaa", background: "none", border: "0.5px solid #ddd", borderRadius: 8, padding: "3px 8px", cursor: "pointer", fontFamily: "'Niramit', sans-serif" }}>
+              Nuevo plan
+            </button>
+          )}
+        </div>
         {loading
           ? <div style={{ color: "#aaa", fontSize: 13, letterSpacing: 4, padding: "8px 0" }}>···</div>
           : <div style={{ fontSize: 13, color: "#444", lineHeight: 1.85, whiteSpace: "pre-wrap" }}>{aiPlan}</div>}
@@ -428,7 +440,7 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
           { icon: "🌙", text: "Ambiente: oscuridad total, 20–23°C, ruido blanco máx. 60 db." },
           { icon: "✨", text: "Rutina: leche → baño → pijama → cuento → ceremonia de adiós a los peluches. Mismos pasos cada noche." },
           { icon: "🧸", text: "Objeto de apego: peluche con tu olor, no lavarlo seguido, tener dos por si se pierde." },
-          { icon: "🔅", text: "Bajar revoluciones 60–90 min antes: luces tenues, sin pantallas, juegos calmados." },
+          { icon: "🔅", text: "Bajar la energía de la casa 60–90 min antes: luces tenues, sin pantallas, juegos calmados." },
           { icon: "☀️", text: "15 min de luz solar por la mañana regulan el reloj biológico." },
           { icon: "📵", text: "Sin pantallas 2h antes de dormir — la luz azul inhibe la melatonina." },
           { icon: "👨‍👩‍👧", text: "Papá como figura estratégica: involúcralo activamente, especialmente en destete y despertares." },

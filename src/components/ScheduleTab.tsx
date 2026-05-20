@@ -186,22 +186,21 @@ export default function ScheduleTab({ initialAgeIdx = 4 }: { initialAgeIdx?: num
         🌙 Horario de {activeBaby.name}
       </div>
 
-      {/* Age selector */}
+      {/* Age display — auto from birthdate, no manual selection */}
       <div style={{ background: "#fff", borderRadius: 16, padding: "16px 18px", marginBottom: 12, boxShadow: "0 2px 12px rgba(100,125,131,0.07)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
           <span style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 18, color: C.teal }}>Horario sugerido</span>
           <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, background: C.cream, color: C.teal }}>{age.sub}</span>
         </div>
-        <div style={{ fontSize: 12, color: "#aaa", marginBottom: 14 }}>Selecciona la edad de {activeBaby.name}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {AGES.map((a, i) => (
-            <button key={i} onClick={() => selectAge(i)}
-              style={{ padding: "9px 6px", border: `0.5px solid ${i === selAge ? C.teal : "#e0e0e0"}`, borderRadius: 8, background: i === selAge ? C.teal : "#fff", color: i === selAge ? "#fff" : "#888", fontSize: 11, fontWeight: i === selAge ? 600 : 400, cursor: "pointer", textAlign: "center", lineHeight: 1.4, fontFamily: "'Niramit', sans-serif" }}>
-              {a.label}
-              <span style={{ fontSize: 10, opacity: 0.75, display: "block", marginTop: 2 }}>{a.sub}</span>
-            </button>
-          ))}
+        <div style={{ fontSize: 12, color: "#aaa", marginBottom: 4 }}>Selecciona la edad de {activeBaby.name}</div>
+        <div style={{ display: "inline-block", background: C.teal, color: "#fff", borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 600 }}>
+          {age.label}
         </div>
+        {!activeBaby.birthdate && (
+          <div style={{ fontSize: 11, color: C.olive, marginTop: 8, lineHeight: 1.5 }}>
+            💡 Agrega la fecha de nacimiento en el perfil (👤) para que el horario se calcule automáticamente.
+          </div>
+        )}
       </div>
 
       {/* Erratic notice */}
