@@ -115,14 +115,21 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
     const newConfig = { babies, familyMode, activeBabyId: config.activeBabyId };
     setConfig(newConfig);
     if (user) {
-      await supabase.from("profiles").upsert({
-        id: user.id, email: user.email,
+      const payload = {
+        id: user.id,
+        email: user.email,
         baby1_name: baby1Name || "Mi bebé",
         baby1_birthdate: baby1Birthdate || null,
         baby2_name: familyMode ? (baby2Name || "Bebé 2") : null,
         baby2_birthdate: familyMode ? (baby2Birthdate || null) : null,
         family_mode: familyMode,
-      });
+      };
+      console.log("SAVING PROFILE:", JSON.stringify(payload));
+      const { data: savedData, error: saveError } = await supabase
+        .from("profiles")
+        .upsert(payload)
+        .select();
+      console.log("SAVE RESULT:", JSON.stringify(savedData), "ERROR:", JSON.stringify(saveError));
     }
     setSaving(false);
     onClose();
