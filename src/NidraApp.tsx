@@ -125,17 +125,28 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
         family_mode: familyMode,
       };
       console.log("SAVING PROFILE:", JSON.stringify(payload));
-      const { error: saveError } = await supabase.rpc("save_profile", {
-        p_id: payload.id,
-        p_email: payload.email,
-        p_baby1_name: payload.baby1_name,
-        p_baby1_birthdate: payload.baby1_birthdate,
-        p_baby2_name: payload.baby2_name,
-        p_baby2_birthdate: payload.baby2_birthdate,
-        p_family_mode: payload.family_mode,
-      });
-      if (saveError) console.error("SAVE ERROR:", JSON.stringify(saveError));
-      else console.log("SAVE OK:", payload.baby1_birthdate);
+      // Try UPDATE first, then INSERT if not exists
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          baby1_name: payload.baby1_name,
+          baby1_birthdate: payload.baby1_birthdate,
+          baby2_name: payload.baby2_name,
+          baby2_birthdate: payload.baby2_birthdate,
+          family_mode: payload.family_mode,
+        })
+        .eq("id", payload.id);
+      if (updateError) {
+        console.error("UPDATE ERROR:", JSON.stringify(updateError));
+        // Fallback: insert
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert(payload);
+        if (insertError) console.error("INSERT ERROR:", JSON.stringify(insertError));
+        else console.log("SAVE OK via INSERT:", payload.baby1_birthdate);
+      } else {
+        console.log("SAVE OK via UPDATE:", payload.baby1_birthdate);
+      }
     }
     setSaving(false);
     onClose();
