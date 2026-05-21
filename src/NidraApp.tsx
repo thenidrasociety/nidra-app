@@ -125,7 +125,7 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
         family_mode: familyMode,
       };
       console.log("SAVING PROFILE:", JSON.stringify(payload));
-      // Save extended profile to localStorage (Supabase schema cache issue)
+      // Save to localStorage first (instant, always works)
       try {
         localStorage.setItem("nidra_profile_" + payload.id, JSON.stringify({
           baby1_birthdate: payload.baby1_birthdate,
@@ -135,12 +135,18 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
         }));
         console.log("SAVE OK localStorage:", payload.baby1_birthdate);
       } catch(e) { console.error("localStorage error:", e); }
-      // Also try Supabase with only safe columns
-      await supabase.from("profiles").upsert({
+      // Save full profile to Supabase
+      const { error: dbError } = await supabase.from("profiles").upsert({
         id: payload.id,
         email: payload.email,
         baby1_name: payload.baby1_name,
+        baby1_birthdate: payload.baby1_birthdate,
+        baby2_name: payload.baby2_name,
+        baby2_birthdate: payload.baby2_birthdate,
+        family_mode: payload.family_mode,
       }, { onConflict: "id" });
+      if (dbError) console.warn("Supabase save failed (using localStorage):", dbError.message);
+      else console.log("SAVE OK Supabase:", payload.baby1_birthdate);
     }
     setSaving(false);
     onClose();
