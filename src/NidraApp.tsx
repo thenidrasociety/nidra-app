@@ -125,28 +125,22 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
         family_mode: familyMode,
       };
       console.log("SAVING PROFILE:", JSON.stringify(payload));
-      // Try UPDATE first, then INSERT if not exists
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          baby1_name: payload.baby1_name,
+      // Save extended profile to localStorage (Supabase schema cache issue)
+      try {
+        localStorage.setItem("nidra_profile_" + payload.id, JSON.stringify({
           baby1_birthdate: payload.baby1_birthdate,
-          baby2_name: payload.baby2_name,
           baby2_birthdate: payload.baby2_birthdate,
+          baby2_name: payload.baby2_name,
           family_mode: payload.family_mode,
-        })
-        .eq("id", payload.id);
-      if (updateError) {
-        console.error("UPDATE ERROR:", JSON.stringify(updateError));
-        // Fallback: insert
-        const { error: insertError } = await supabase
-          .from("profiles")
-          .insert(payload);
-        if (insertError) console.error("INSERT ERROR:", JSON.stringify(insertError));
-        else console.log("SAVE OK via INSERT:", payload.baby1_birthdate);
-      } else {
-        console.log("SAVE OK via UPDATE:", payload.baby1_birthdate);
-      }
+        }));
+        console.log("SAVE OK localStorage:", payload.baby1_birthdate);
+      } catch(e) { console.error("localStorage error:", e); }
+      // Also try Supabase with only safe columns
+      await supabase.from("profiles").upsert({
+        id: payload.id,
+        email: payload.email,
+        baby1_name: payload.baby1_name,
+      }, { onConflict: "id" });
     }
     setSaving(false);
     onClose();
@@ -462,10 +456,21 @@ export default function NidraApp() {
         await supabase.from("profiles").insert({ id: user.id, email: user.email });
       }
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      if (data) {
-        const babies: BabyProfile[] = [{ id: "b1", name: data.baby1_name || "Mi bebé", birthdate: data.baby1_birthdate || "" }];
-        if (data.family_mode && data.baby2_name) babies.push({ id: "b2", name: data.baby2_name, birthdate: data.baby2_birthdate || "" });
-        setConfig({ babies, familyMode: data.family_mode || false, activeBabyId: "b1" });
+      // Merge Supabase data with localStorage extended profile (birthdates saved locally)
+      let extended: any = {};
+      try {
+        const raw = localStorage.getItem("nidra_profile_" + user.id);
+        if (raw) extended = JSON.parse(raw);
+      } catch {}
+      if (data || Object.keys(extended).length > 0) {
+        const baby1Name = data?.baby1_name || "Mi bebé";
+        const baby1Birthdate = extended?.baby1_birthdate || data?.baby1_birthdate || "";
+        const baby2Name = extended?.baby2_name || data?.baby2_name || "";
+        const baby2Birthdate = extended?.baby2_birthdate || data?.baby2_birthdate || "";
+        const familyMode = extended?.family_mode ?? data?.family_mode ?? false;
+        const babies: BabyProfile[] = [{ id: "b1", name: baby1Name, birthdate: baby1Birthdate }];
+        if (familyMode && baby2Name) babies.push({ id: "b2", name: baby2Name, birthdate: baby2Birthdate });
+        setConfig({ babies, familyMode, activeBabyId: "b1" });
       }
     };
     const loadLogs = async () => {
