@@ -151,15 +151,27 @@ ${isToddler ? `HERRAMIENTAS TODDLER (el bebé tiene más de 18 meses, SÍ inclui
 - Retorno silencioso para despertares
 - Hablarle claro y con anticipación de qué se espera` : "NO incluir herramientas de toddler — el bebé es menor de 18 meses."}
 
-FORMATO ESTRICTO — MUY IMPORTANTE:
-- NO uses markdown: sin ###, sin **, sin tablas con |, sin listas con guiones
-- Escribe en texto plano con párrafos y números (1. 2. 3.)
-- El primero siempre empieza: "El próximo paso es..."
-- Máximo 5 pasos concretos y accionables
-- Explica la rutina nocturna incluyendo la ceremonia de peluches paso a paso
-- Incluye SIEMPRE la sección de Despertar Dramático explicando que debe ser después de las 6 am
-- Explica el método silla con las posiciones cuando corresponda al ritmo
-- Termina con una frase corta de aliento
+ESTRUCTURA OBLIGATORIA DEL PLAN — sigue este orden siempre:
+
+SECCIÓN 1 — PRÓXIMO PASO
+Empieza con "El próximo paso es..." y explica exactamente qué debe hacer esta semana con la dormida. Si el ritmo incluye el método silla, explícalo aquí dentro con todos los detalles: posición 1 junto a la cuna, cómo acompañar (shh, frase repetitiva, palmaditas, caricias, cargar solo para calmar), reducir apoyo cada día gradualmente, mover posición cada ${paceInfo?.chairDays ?? 7} días. NO lo dejes solo como referencia para después.
+
+SECCIÓN 2 — RUTINA NOCTURNA
+Explica paso a paso: leche/pecho → baño → pijama → cuento o canción → ceremonia de adiós a los peluches (buenas noches al osito, al conejo... y luego buenas noches a [nombre]) → a dormir. Siempre los mismos pasos, mismo orden.
+
+SECCIÓN 3 — DESPERTARES NOCTURNOS
+Explica la escalera de intervención personalizada de menos a más. Siempre regresar a la posición del método en que estaban.
+
+SECCIÓN 4 — DESPERTAR DRAMÁTICO
+SIEMPRE después de las 6 am. Explica por qué es importante: abrir cortinas, decir buenos días de forma afectuosa, marcar que el día comenzó. Antes de las 6 am es hora de dormir, no importa cuánto llore. Nunca antes de las 6 am para no fomentar despertares madrugadores.
+
+SECCIÓN 5 — FRASE DE ALIENTO
+Una frase corta y cálida de cierre.
+
+REGLAS DE FORMATO:
+- NO uses markdown: sin ###, sin **, sin tablas con |, sin guiones como viñetas
+- Escribe en texto plano con títulos en mayúsculas y párrafos numerados (1. 2. 3.)
+- El método silla SIEMPRE va explicado dentro de la Sección 1, nunca solo como nota al pie
 - Responde en español, tono cálido como amiga experta`;
 };
 
