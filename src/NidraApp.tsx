@@ -135,18 +135,28 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
         }));
         console.log("SAVE OK localStorage:", payload.baby1_birthdate);
       } catch(e) { console.error("localStorage error:", e); }
-      // Save full profile to Supabase
-      const { error: dbError } = await supabase.from("profiles").upsert({
-        id: payload.id,
-        email: payload.email,
-        baby1_name: payload.baby1_name,
-        baby1_birthdate: payload.baby1_birthdate,
-        baby2_name: payload.baby2_name,
-        baby2_birthdate: payload.baby2_birthdate,
-        family_mode: payload.family_mode,
-      }, { onConflict: "id" });
-      if (dbError) console.warn("Supabase save failed (using localStorage):", dbError.message);
-      else console.log("SAVE OK Supabase:", payload.baby1_birthdate);
+      // Save to Supabase via direct fetch (bypasses schema cache issue)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token || "";
+        const sbUrl = "https://uabbramsbfhsngtfjvkm.supabase.co";
+        const sbKey = "sb_publishable_hsHfPJVR0sOHGS2KXjA2Jg_WihvCWpz";
+        const res = await fetch(`${sbUrl}/rest/v1/profiles?on_conflict=id`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": sbKey,
+            "Authorization": `Bearer ${token}`,
+            "Prefer": "resolution=merge-duplicates",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) console.log("SAVE OK Supabase fetch:", payload.baby1_birthdate);
+        else {
+          const err = await res.text();
+          console.warn("Supabase fetch failed:", err);
+        }
+      } catch(e: any) { console.warn("Supabase fetch error:", e.message); }
     }
     setSaving(false);
     onClose();
