@@ -1,9 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -12,20 +6,32 @@ export default async function handler(req: any, res: any) {
   try {
     const { messages, system } = req.body;
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 2048,
-      system,
-      messages,
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY || "",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5",
+        max_tokens: 2048,
+        system,
+        messages,
+      }),
     });
 
-    return res.status(200).json({ content: response.content });
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error("Anthropic HTTP error:", response.status, errBody);
+      return res.status(500).json({ error: `Anthropic error ${response.status}: ${errBody}` });
+    }
+
+    const data = await response.json();
+    return res.status(200).json({ content: data.content });
+
   } catch (error: any) {
-    console.error("Anthropic error full:", JSON.stringify(error));
-    return res.status(500).json({
-      error: error.message || "Unknown error",
-      status: error.status || null,
-      errorType: error.error?.type || null,
-    });
+    console.error("Handler error:", error?.message || error);
+    return res.status(500).json({ error: error?.message || "Unknown error" });
   }
 }
