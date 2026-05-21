@@ -125,9 +125,15 @@ function ProfileModal({ onClose }: { onClose: () => void }) {
         family_mode: familyMode,
       };
       console.log("SAVING PROFILE:", JSON.stringify(payload));
-      const { error: saveError } = await supabase
-        .from("profiles")
-        .upsert(payload, { onConflict: "id" });
+      const { error: saveError } = await supabase.rpc("save_profile", {
+        p_id: payload.id,
+        p_email: payload.email,
+        p_baby1_name: payload.baby1_name,
+        p_baby1_birthdate: payload.baby1_birthdate,
+        p_baby2_name: payload.baby2_name,
+        p_baby2_birthdate: payload.baby2_birthdate,
+        p_family_mode: payload.family_mode,
+      });
       if (saveError) console.error("SAVE ERROR:", JSON.stringify(saveError));
       else console.log("SAVE OK:", payload.baby1_birthdate);
     }
