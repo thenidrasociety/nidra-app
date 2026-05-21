@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
     const { messages, system } = req.body;
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
+      model: "claude-sonnet-4-5",
       max_tokens: 2048,
       system,
       messages,
@@ -21,7 +21,11 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json({ content: response.content });
   } catch (error: any) {
-    console.error("Anthropic error:", error);
-    return res.status(500).json({ error: error.message });
+    console.error("Anthropic error full:", JSON.stringify(error));
+    return res.status(500).json({
+      error: error.message || "Unknown error",
+      status: error.status || null,
+      errorType: error.error?.type || null,
+    });
   }
 }
