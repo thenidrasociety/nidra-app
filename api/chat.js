@@ -1,4 +1,4 @@
-export default async function handler(req: any, res: any) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -16,22 +16,22 @@ export default async function handler(req: any, res: any) {
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
         max_tokens: 2048,
-        system,
-        messages,
+        system: system,
+        messages: messages,
       }),
     });
 
     if (!response.ok) {
       const errBody = await response.text();
       console.error("Anthropic HTTP error:", response.status, errBody);
-      return res.status(500).json({ error: `Anthropic error ${response.status}: ${errBody}` });
+      return res.status(500).json({ error: "Anthropic error " + response.status + ": " + errBody });
     }
 
     const data = await response.json();
     return res.status(200).json({ content: data.content });
 
-  } catch (error: any) {
-    console.error("Handler error:", error?.message || error);
-    return res.status(500).json({ error: error?.message || "Unknown error" });
+  } catch (error) {
+    console.error("Handler error:", error && error.message ? error.message : error);
+    return res.status(500).json({ error: error && error.message ? error.message : "Unknown error" });
   }
-}
+};
