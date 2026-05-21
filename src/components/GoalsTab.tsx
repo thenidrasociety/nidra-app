@@ -62,28 +62,26 @@ const buildSystemPrompt = (pace?: string, ladderSteps?: string[], ageMonths?: nu
   const isToddler = ageMonths ? ageMonths >= 18 : false;
 
   const slowPaceSteps = `
-RITMO MUY GRADUAL — Sigue estos pasos en orden. No pases al siguiente hasta que el bebé esté completamente adaptado al actual (mínimo ${paceInfo?.chairDays ?? 10} días en cada paso):
-Paso 1: Dormir en pecho/pecho completo hasta dormirse profundamente, pasar a cuna
-Paso 2: Pecho hasta adormecerse (no completamente dormido), terminar de dormir en brazos con arrullo
+RITMO MUY GRADUAL — Sigue estos pasos en orden. Mínimo ${paceInfo?.chairDays ?? 10} días en cada paso antes de avanzar:
+Paso 1: Pecho completo hasta dormirse profundamente, pasar a cuna
+Paso 2: Pecho hasta adormecerse, terminar de dormir en brazos con arrullo
 Paso 3: Brazos con arrullo hasta dormirse completamente
 Paso 4: Brazos SIN arrullo, quieta, hasta dormirse
-Paso 5: En cuna con caricias constantes
-Paso 6: En cuna con caricias reduciéndose gradualmente
-Paso 7: En cuna con presencia, sin contacto
-Paso 8: Método silla — posición 1 (junto a la cuna)`;
+Paso 5: Cuna con caricias — reducción muy gradual: Días 1-3 al 95% del tiempo con caricias, Días 4-6 al 90%, Días 7-9 al 85%, luego 80%, 75%... bajando 5% cada 2-3 días
+Paso 6: Método silla posición 1 junto a la cuna. Reducción diaria: hoy 90% de apoyo, mañana 85%, pasado 80%... bajando 5% cada día. Cada ${paceInfo?.chairDays ?? 10} días mover a posición más lejana`;
 
   const mediumPaceSteps = `
-RITMO MODERADO — Pasos más ágiles, avanzando cada ${paceInfo?.chairDays ?? 7} días:
-Paso 1: Reducir rápidamente a brazos con arrullo (eliminar pecho como asociación de sueño en 1-2 semanas)
+RITMO MODERADO — Avanzando cada ${paceInfo?.chairDays ?? 7} días:
+Paso 1: Reducir a brazos con arrullo (1-2 semanas)
 Paso 2: Brazos sin arrullo, quieta
-Paso 3: Cuna con caricias
-Paso 4: Método silla — comenzar posición 1 (junto a la cuna) y avanzar posiciones cada 7 días`;
+Paso 3: Cuna con caricias — reducción moderada: Día 1 al 90% del tiempo con caricias, Día 2 al 75%, Día 3 al 60%, Día 4 al 45%, Día 5 al 30%... bajando ~15% cada día
+Paso 4: Método silla posición 1 junto a la cuna. Reducción: hoy 80% de apoyo, mañana 65%, pasado 50%... bajando ~15% por día. Cada ${paceInfo?.chairDays ?? 7} días mover a posición más lejana`;
 
   const fastPaceSteps = `
 RITMO RÁPIDO — Transición acelerada:
-Días 1-3: Brazos sin arrullo (dejar pecho y arrullo casi de inmediato)
-Días 4-6: Cuna con caricias
-Día 7 en adelante: Método silla directo — posición 1 junto a la cuna, avanzar cada ${paceInfo?.chairDays ?? 3} días`;
+Días 1-3: Pasar directamente a brazos sin arrullo
+Días 4-6: Cuna con caricias — reducción rápida: Día 4 al 80% del tiempo con caricias, Día 5 al 55%, Día 6 al 30%... bajando ~25% cada día
+Día 7 en adelante: Método silla directo posición 1 junto a la cuna. Reducción: hoy 70% de apoyo, mañana 45%, pasado 20%... bajando ~25% por día. Cada ${paceInfo?.chairDays ?? 3} días mover a posición más lejana`;
 
   const paceStepsText = pace === "slow" ? slowPaceSteps : pace === "medium" ? mediumPaceSteps : pace === "fast" ? fastPaceSteps : "";
 
