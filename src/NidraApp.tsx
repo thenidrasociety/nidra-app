@@ -232,20 +232,68 @@ export function BabySelectorBar() {
   );
 }
 
+// ── Chat History Types ────────────────────────────────────────────────────────
+interface ChatSession {
+  id: string;
+  date: string;
+  preview: string;
+  messages: Message[];
+}
+
 // ── Chat Tab ──────────────────────────────────────────────────────────────────
 function ChatTab() {
   const { config } = useAppConfig();
   const activeBaby = config.babies.find(b => b.id === config.activeBabyId) ?? config.babies[0];
   const ageInfo = activeBaby.birthdate ? ` El bebé se llama ${activeBaby.name} y tiene ${getAgeLabel(activeBaby.birthdate)}.` : "";
 
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hola, soy Nidra 🌙 Tu asistente de sueño. ¿En qué puedo ayudarte hoy? Cuéntame cómo están las noches." },
-  ]);
-  const [input, setInput]   = useState("");
-  const [loading, setLoading] = useState(false);
+  const INITIAL_MSG: Message = { role: "assistant", content: "Hola, soy Nidra 🌙 Tu asistente de sueño. ¿En qué puedo ayudarte hoy? Cuéntame cómo están las noches." };
+
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MSG]);
+  const [input, setInput]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
+    try { return JSON.parse(localStorage.getItem("nidra_chat_history") || "[]"); } catch { return []; }
+  });
+  const [currentSessionId, setCurrentSessionId] = useState<string>(Date.now().toString());
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
+
+  const saveSession = (msgs: Message[], sessionId: string) => {
+    if (msgs.length <= 1) return; // Don't save empty sessions
+    const userMsgs = msgs.filter(m => m.role === "user");
+    if (userMsgs.length === 0) return;
+    const preview = userMsgs[0].content.slice(0, 60) + (userMsgs[0].content.length > 60 ? "…" : "");
+    const session: ChatSession = {
+      id: sessionId,
+      date: new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }),
+      preview,
+      messages: msgs,
+    };
+    setChatHistory(prev => {
+      const filtered = prev.filter(s => s.id !== sessionId);
+      const updated = [session, ...filtered].slice(0, 15);
+      try { localStorage.setItem("nidra_chat_history", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  };
+
+  const startNewChat = () => {
+    saveSession(messages, currentSessionId);
+    const newId = Date.now().toString();
+    setCurrentSessionId(newId);
+    setMessages([INITIAL_MSG]);
+    setInput("");
+    setShowHistory(false);
+  };
+
+  const loadSession = (session: ChatSession) => {
+    saveSession(messages, currentSessionId);
+    setMessages(session.messages);
+    setCurrentSessionId(session.id);
+    setShowHistory(false);
+  };
 
   const send = async () => {
     const text = input.trim();
@@ -265,7 +313,9 @@ function ChatTab() {
         }),
       });
       const data = await res.json();
-      setMessages([...updated, { role: "assistant", content: data?.content?.[0]?.text ?? "Lo siento, tuve un problema 🙏" }]);
+      const finalMsgs = [...updated, { role: "assistant" as const, content: data?.content?.[0]?.text ?? "Lo siento, tuve un problema 🙏" }];
+      setMessages(finalMsgs);
+      saveSession(finalMsgs, currentSessionId);
     } catch {
       setMessages([...updated, { role: "assistant", content: "Error de conexión. Intenta de nuevo 💙" }]);
     }
@@ -274,8 +324,54 @@ function ChatTab() {
 
   const quickPrompts = ["¿A qué hora debería dormir?", "Mi bebé no duerme de noche", "¿Cuántas siestas necesita?", "¿Cómo manejo una regresión?"];
 
+  // ── History View ─────────────────────────────────────────────────────────────
+  if (showHistory) return (
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 145px)" }}>
+      <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.cream}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff" }}>
+        <button onClick={() => setShowHistory(false)}
+          style={{ background: "none", border: "none", fontSize: 13, color: C.teal, cursor: "pointer", fontFamily: "'Niramit', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+          ← Volver al chat
+        </button>
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 700, fontSize: 16, color: C.teal }}>Conversaciones</div>
+        <div style={{ width: 80 }} />
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+        <button onClick={startNewChat}
+          style={{ width: "100%", padding: "11px 14px", background: C.teal, color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Niramit', sans-serif", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          ✦ Nueva conversación
+        </button>
+        {chatHistory.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#bbb", fontSize: 13, padding: "30px 0" }}>
+            Aún no tienes conversaciones guardadas
+          </div>
+        ) : chatHistory.map(session => (
+          <div key={session.id} onClick={() => loadSession(session)}
+            style={{ background: "#fff", borderRadius: 12, padding: "12px 14px", marginBottom: 8, cursor: "pointer", boxShadow: "0 1px 6px rgba(100,125,131,0.08)", border: `0.5px solid ${session.id === currentSessionId ? C.teal : C.cream}` }}>
+            <div style={{ fontSize: 13, color: "#444", marginBottom: 4, fontWeight: session.id === currentSessionId ? 600 : 400 }}>
+              {session.id === currentSessionId && <span style={{ color: C.teal }}>● </span>}
+              {session.preview}
+            </div>
+            <div style={{ fontSize: 11, color: "#bbb" }}>📅 {session.date} · {session.messages.filter(m => m.role === "user").length} mensajes</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ── Chat View ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 145px)" }}>
+      {/* Chat toolbar */}
+      <div style={{ padding: "8px 16px", borderBottom: `1px solid ${C.cream}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <button onClick={() => setShowHistory(true)}
+          style={{ background: "none", border: `0.5px solid ${C.sage}`, borderRadius: 8, padding: "5px 10px", fontSize: 11, color: C.teal, cursor: "pointer", fontFamily: "'Niramit', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>
+          💬 {chatHistory.length > 0 ? `Historial (${chatHistory.length})` : "Historial"}
+        </button>
+        <button onClick={startNewChat}
+          style={{ background: "none", border: `0.5px solid ${C.sage}`, borderRadius: 8, padding: "5px 10px", fontSize: 11, color: C.olive, cursor: "pointer", fontFamily: "'Niramit', sans-serif" }}>
+          ＋ Nueva conversación
+        </button>
+      </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column" }}>
         {messages.map((m, i) => (
           <div key={i} style={{ background: m.role === "user" ? C.teal : "#fff", color: m.role === "user" ? "#fff" : "#444", borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", padding: "10px 14px", maxWidth: "80%", fontSize: 13.5, lineHeight: 1.6, marginBottom: 8, alignSelf: m.role === "user" ? "flex-end" : "flex-start", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" }}>
@@ -336,8 +432,11 @@ export default function NidraApp() {
   useEffect(() => {
     if (!user) return;
     const loadProfile = async () => {
-      // Ensure profile exists
-      await supabase.from("profiles").upsert({ id: user.id, email: user.email }, { onConflict: "id", ignoreDuplicates: true });
+      // Ensure profile row exists WITHOUT overwriting existing data
+      const { data: existing } = await supabase.from("profiles").select("id").eq("id", user.id).single();
+      if (!existing) {
+        await supabase.from("profiles").insert({ id: user.id, email: user.email });
+      }
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (data) {
         const babies: BabyProfile[] = [{ id: "b1", name: data.baby1_name || "Mi bebé", birthdate: data.baby1_birthdate || "" }];
