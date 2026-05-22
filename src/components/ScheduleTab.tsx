@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAppConfig } from "../NidraApp";
+import NotificationsSection from "./NotificationsSection";
 
 const C = {
   teal: "#647D83",
@@ -320,7 +321,7 @@ export default function ScheduleTab({ initialAgeIdx = 4 }: { initialAgeIdx?: num
       </div>
 
       {/* Wake window */}
-      <div style={{ background: C.cream, borderRadius: 16, padding: "14px 16px" }}>
+      <div style={{ background: C.cream, borderRadius: 16, padding: "14px 16px", marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: C.teal, marginBottom: 5 }}>🕐 Ventana de vigilia</div>
         <div style={{ fontSize: 12, color: "#777", lineHeight: 1.7 }}>
           {age.erratic
@@ -328,6 +329,14 @@ export default function ScheduleTab({ initialAgeIdx = 4 }: { initialAgeIdx?: num
             : `Ventana de vigilia: ${wwStr(age.wwMin, age.wwMax)}. Sueño total recomendado en 24h: ${age.sleep24}.`}
         </div>
       </div>
+
+      {/* Notifications */}
+      <NotificationsSection
+        babyName={activeBaby.name}
+        bedtimeMins={rows[rows.length - 1]?.startMins ?? 19 * 60}
+        nap1Mins={rows.find(r => r.type === "nap")?.startMins ?? null}
+        nap2Mins={rows.filter(r => r.type === "nap")[1]?.startMins ?? null}
+      />
     </div>
   );
 }
