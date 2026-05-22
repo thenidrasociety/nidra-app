@@ -262,6 +262,9 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
     try { return JSON.parse(localStorage.getItem("nidra_plan_history") || "[]"); } catch { return []; }
   });
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [planChat, setPlanChat]           = useState<{role:"user"|"assistant";content:string}[]>([]);
+  const [planChatInput, setPlanChatInput] = useState("");
+  const [planChatLoading, setPlanChatLoading] = useState(false);
 
   const hasIndependent = selectedGoals.has("independent");
   const needsLadder    = Array.from(selectedGoals).some(g => TRAINING_GOALS.has(g));
@@ -336,6 +339,40 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
       setAiPlan("Hubo un error de conexión. Intenta de nuevo o habla con Nidra en el Asistente.");
     }
     setLoading(false);
+  };
+
+  const sendPlanChat = async () => {
+    const text = planChatInput.trim();
+    if (!text || planChatLoading) return;
+    const userMsg = { role: "user" as const, content: text };
+    const updatedChat = [...planChat, userMsg];
+    setPlanChat(updatedChat);
+    setPlanChatInput("");
+    setPlanChatLoading(true);
+    try {
+      const goalLabels = Array.from(selectedGoals).map(id => GOALS.find(g => g.id === id)?.label).filter(Boolean).join(", ");
+      const ladderText = ladder.filter(s => s.active).map(s => s.label);
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: buildSystemPrompt(selectedPace, ladderText, babyAgeMonths, babyName) +
+            `
+
+EL PLAN YA GENERADO ES:
+${aiPlan}
+
+La mamá ahora tiene preguntas o quiere ajustar el plan. Responde con base en el plan ya dado, siendo concisa y práctica.`,
+          messages: updatedChat.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await res.json();
+      const reply = data?.content?.[0]?.text ?? "Lo siento, tuve un problema. Intenta de nuevo.";
+      setPlanChat([...updatedChat, { role: "assistant", content: reply }]);
+    } catch {
+      setPlanChat([...updatedChat, { role: "assistant", content: "Error de conexión. Intenta de nuevo 💙" }]);
+    }
+    setPlanChatLoading(false);
   };
 
   const paceInfo = PACE_OPTIONS.find(p => p.id === selectedPace);
@@ -588,7 +625,7 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.olive, letterSpacing: 1 }}>NIDRA ✦ — Tu plan personalizado</div>
           {aiPlan && !loading && (
-            <button onClick={() => { setView("goals"); setAiPlan(""); try { localStorage.removeItem("nidra_last_plan"); } catch {} }}
+            <button onClick={() => { setView("goals"); setAiPlan(""); setPlanChat([]); try { localStorage.removeItem("nidra_last_plan"); } catch {} }}
               style={{ fontSize: 11, color: "#aaa", background: "none", border: "0.5px solid #ddd", borderRadius: 8, padding: "3px 8px", cursor: "pointer", fontFamily: "'Niramit', sans-serif" }}>
               Nuevo plan
             </button>
@@ -601,6 +638,48 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
           Plan generado con base en tus respuestas y el método de Adri.
         </div>
       </Card>
+
+      {/* Follow-up chat on plan */}
+      {aiPlan && !loading && (
+        <Card>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.olive, letterSpacing: 1, marginBottom: 10 }}>
+            💬 Pregúntame sobre tu plan
+          </div>
+          <div style={{ fontSize: 12, color: "#aaa", marginBottom: 12 }}>
+            ¿Tienes dudas? ¿Quieres ajustar algo? Cuéntame.
+          </div>
+          <div style={{ maxHeight: 320, overflowY: "auto", marginBottom: 10 }}>
+            {planChat.map((m, i) => (
+              <div key={i} style={{
+                background: m.role === "user" ? C.teal : C.cream,
+                color: m.role === "user" ? "#fff" : "#444",
+                borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                padding: "8px 12px", fontSize: 12.5, lineHeight: 1.6,
+                marginBottom: 6, maxWidth: "85%",
+                alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                display: "block", marginLeft: m.role === "user" ? "auto" : 0,
+              }}>
+                {m.role === "assistant" && <div style={{ fontSize: 9, color: C.olive, fontWeight: 600, marginBottom: 3, letterSpacing: 1 }}>NIDRA ✦</div>}
+                {m.content}
+              </div>
+            ))}
+            {planChatLoading && (
+              <div style={{ background: C.cream, borderRadius: "14px 14px 14px 4px", padding: "8px 12px", fontSize: 12, color: "#aaa", display: "inline-block" }}>···</div>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={planChatInput}
+              onChange={e => setPlanChatInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && sendPlanChat()}
+              placeholder="Ej: ¿Y si llora mucho en posición 1?"
+              style={{ flex: 1, border: `1.5px solid ${C.sage}`, borderRadius: 8, padding: "8px 10px", fontFamily: "'Niramit', sans-serif", fontSize: 12, color: "#444", background: C.cream, outline: "none" }}
+            />
+            <button onClick={sendPlanChat} disabled={planChatLoading}
+              style={{ background: C.teal, color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: planChatLoading ? 0.5 : 1 }}>↑</button>
+          </div>
+        </Card>
+      )}
 
       {/* Chair method explanation */}
       {hasIndependent && paceInfo && (

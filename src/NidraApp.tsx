@@ -327,6 +327,7 @@ function ChatTab() {
     setMessages(session.messages);
     setCurrentSessionId(session.id);
     setShowHistory(false);
+    // Allow continuing the conversation
   };
 
   const send = async () => {
@@ -385,7 +386,12 @@ function ChatTab() {
               {session.id === currentSessionId && <span style={{ color: C.teal }}>● </span>}
               {session.preview}
             </div>
-            <div style={{ fontSize: 11, color: "#bbb" }}>📅 {session.date} · {session.messages.filter(m => m.role === "user").length} mensajes</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: "#bbb" }}>📅 {session.date} · {session.messages.filter(m => m.role === "user").length} mensajes</div>
+              <div style={{ fontSize: 11, color: C.teal, fontWeight: 600 }}>
+                {session.id === currentSessionId ? "Activa ●" : "Continuar →"}
+              </div>
+            </div>
           </div>
         ))}
       </div>
