@@ -350,7 +350,6 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
     setPlanChatInput("");
     setPlanChatLoading(true);
     try {
-      const goalLabels = Array.from(selectedGoals).map(id => GOALS.find(g => g.id === id)?.label).filter(Boolean).join(", ");
       const ladderText = ladder.filter(s => s.active).map(s => s.label);
       const res = await fetch("/api/chat", {
         method: "POST",
