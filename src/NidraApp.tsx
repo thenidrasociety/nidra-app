@@ -307,7 +307,7 @@ function ChatTab() {
     };
     setChatHistory(prev => {
       const filtered = prev.filter(s => s.id !== sessionId);
-      const updated = [session, ...filtered].slice(0, 15);
+      const updated = [session, ...filtered].slice(0, 10);
       try { localStorage.setItem("nidra_chat_history", JSON.stringify(updated)); } catch {}
       return updated;
     });

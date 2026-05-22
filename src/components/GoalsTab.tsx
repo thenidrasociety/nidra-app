@@ -18,7 +18,7 @@ const GOALS = [
   { id: "transition",  label: "Transición de habitación o cama" },
   { id: "regression",  label: "Sobrellevar una regresión de sueño" },
   { id: "schedule",    label: "Establecer horario fijo" },
-  { id: "nightfeed",   label: "Quitar tomas de leche por la noche" },
+  { id: "nightfeed",   label: "Quitar tomas de leche por la noche ⚠️" },
   { id: "wakings",     label: "Eliminar despertares nocturnos" },
   { id: "routine",     label: "Crear rutina de noche consistente" },
   { id: "overtired",   label: "Manejar sobre cansancio" },
@@ -104,6 +104,26 @@ Nivel 8: Cuna con caricias reduciéndose gradualmente (70%, 50%, 30%...)
 Nivel 9: Cuna con presencia sin contacto
 Nivel 10: Dormirse solo
 
+REGLAS IMPORTANTES POR EDAD — OBLIGATORIO SEGUIR SIEMPRE:
+
+Si el bebé tiene MENOS DE 5 MESES:
+- NO se hace ningún plan de sueño formal porque el sueño del bebé aún es muy errático y está en desarrollo
+- SÍ se puede: acostar en la cuna y dormir con caricias, reducir el pecho como único apoyo gentilmente
+- NO se puede: ningún entrenamiento formal, ningún método silla, no eliminar despertares nocturnos
+- Explicar esto con mucho amor: "Antes de los 5 meses el sueño es naturalmente irregular. Lo que sí puedes hacer es..."
+- Dar solo estrategias suaves: rutina nocturna, ambiente óptimo, cuna con caricias, quitar pecho de forma muy gentil
+
+Si el bebé tiene DE 5 A 6 MESES:
+- Se pueden empezar estrategias suaves: quitar pecho para dormir, dejar de arrullar gentilmente, dormir en cuna con caricias
+- NO más allá de eso — no método silla formal todavía
+
+Si el bebé tiene MÁS DE 6 MESES:
+- Se puede hacer entrenamiento formal completo según el ritmo elegido
+
+AVISOS MÉDICOS OBLIGATORIOS — incluir SIEMPRE en el plan:
+- Al final del plan SIEMPRE agregar: "Importante: Antes de iniciar cualquier plan de sueño, asegúrate de que tu pediatra haya descartado cualquier tema médico que pueda estar afectando el sueño de tu bebé (reflujo, alergias, problemas de oído, etc.)."
+- Si los objetivos incluyen quitar tomas nocturnas o destete: agregar "NOTA IMPORTANTE: Quitar tomas nocturnas o iniciar el destete SIEMPRE debe hacerse con el visto bueno de tu pediatra primero, especialmente para asegurarse de que el bebé está ganando bien peso y no necesita esas tomas por razones nutricionales."
+
 PARA LA PRIMERA DORMIDA (inicio de noche y siestas):
 - Identifica en qué nivel está el bebé según la descripción de la mamá
 - Da el siguiente paso concreto
@@ -132,7 +152,7 @@ ${ladderSteps && ladderSteps.length > 0
 Siempre de MENOS a MÁS. Solo escalar si el nivel anterior no funcionó.
 
 RUTINA NOCTURNA — explicar SIEMPRE paso a paso:
-Leche/pecho → Baño relajante → Pijama → Cuento o canción → Ceremonia de adiós a los peluches → A dormir
+Leche/pecho → Baño relajante con agua tibia → Pijama → Cuento o canción → Ceremonia de adiós a los peluches → A dormir
 La ceremonia de peluches: colocar 2-3 peluches en el cuarto (no en la cuna). Al finalizar la rutina decirles buenas noches a cada uno por nombre: "Buenas noches al osito, buenas noches al conejo..." y luego "Buenas noches a [nombre del bebé]". Esto da cierre al día y seguridad.
 
 ${paceInfo ? `RITMO ELEGIDO: ${paceInfo.icon} ${paceInfo.label} — ${paceInfo.detail} Avanzar cada ${paceInfo.chairDays} días.` : ""}
@@ -281,7 +301,7 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
       pace,
       plan,
     };
-    const updated = [newItem, ...planHistory].slice(0, 10);
+    const updated = [newItem, ...planHistory].slice(0, 5);
     setPlanHistory(updated);
     try { localStorage.setItem("nidra_plan_history", JSON.stringify(updated)); } catch {}
   };
@@ -613,8 +633,9 @@ export default function GoalsTab({ babyName, babyAgeMonths, babyBirthdate }: Pro
           { icon: "📵", text: "Sin pantallas 2h antes de dormir — la luz azul inhibe la melatonina." },
           { icon: "👨‍👩‍👧", text: "Papá como figura estratégica: involúcralo activamente, especialmente en destete y despertares." },
           { icon: "💤", text: "Sueño en movimiento (coche, cargador): cuenta pero no nutre — como comida chatarra, el cerebro sigue alerta." },
+          { icon: "🩺", text: "Antes de iniciar cualquier plan, asegúrate de que tu pediatra haya descartado temas médicos que afecten el sueño (reflujo, alergias, problemas de oído)." },
         ].map((tip, i) => (
-          <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "6px 0", borderBottom: i < 7 ? `1px solid rgba(100,125,131,0.1)` : "none" }}>
+          <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "6px 0", borderBottom: i < 8 ? `1px solid rgba(100,125,131,0.1)` : "none" }}>
             <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{tip.icon}</span>
             <span style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>{tip.text}</span>
           </div>
